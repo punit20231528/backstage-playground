@@ -5,7 +5,6 @@ import {
 } from '@backstage/plugin-auth-backend';
 import { Router } from 'express';
 import { PluginEnvironment } from '../types';
-import { DEFAULT_NAMESPACE, stringifyEntityRef } from '@backstage/catalog-model';
 
 export default async function createPlugin(
   env: PluginEnvironment,
@@ -45,8 +44,8 @@ export default async function createPlugin(
               throw new Error('User profile contained no email');
             }
 
-            // Split the email into the local part and the domain.
-            const [localPart, domain] = email.split('@');
+              // Split the email into the local part and the domain.
+              const [name, domain] = email.split('@');
 
             // Next we verify the email domain. It is recommended to include this
             // kind of check if you don't look up the user in an external service.
@@ -55,19 +54,12 @@ export default async function createPlugin(
                 `Login failed, this email ${email} does not belong to the expected domain`,
               );
             }
-
+            
             // By using `stringifyEntityRef` we ensure that the reference is formatted correctly
-            const userRef = stringifyEntityRef({
-              kind: 'User',
-              name: localPart,
-              namespace: DEFAULT_NAMESPACE,
-            });
+            
 
-            return ctx.issueToken({
-              claims: {
-                sub: userRef, // The user's own identity
-                ent: [userRef], // A list of identities that the user claims ownership through
-              },
+            return ctx.signInWithCatalogUser({
+              entityRef: { name },
             });
           },
           // resolver: providers.github.resolvers.usernameMatchingUserEntityName(),
